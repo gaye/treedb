@@ -1,0 +1,26 @@
+{
+  "name": "treedb",
+  "version": "1.0.0-alpha",
+  "author": "Gareth Aye [:gaye] <gaye@mozilla.com>",
+  "description": "JSON tree database for the web inspired by Firebase",
+  "license": "MPL-2.0",
+
+  "devDependencies": {
+    "browserify": "9.0.8",
+    "babel": "5.1.10",
+    "chai": "2.2.0",
+    "chai-as-promised": "5.0.0",
+    "eventemitter2": "0.4.14",
+    "mocha": "2.2.4",
+    "regenerator": "0.8.22"
+  },
+
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaye/treedb.git"
+  },
+
+  "scripts": {
+    "test": "make test"
+  }
+}
