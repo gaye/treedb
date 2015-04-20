@@ -7,7 +7,7 @@ Object.defineProperty(exports, '__esModule', {
 exports.open = open;
 exports.close = close;
 
-var _domPromise = require('./polyfill');
+var _domPromise = require('./idb');
 
 var db = undefined;
 
@@ -51,67 +51,7 @@ function open(name) {
 function close() {
   db.close();
 }
-},{"./polyfill":4}],2:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
-exports['default'] = debug;
-
-function debug() {
-  var args = Array.slice(arguments);
-  args = args.map(function (arg) {
-    return typeof arg === 'object' ? JSON.stringify(arg) : arg;
-  });
-  console.log(args.join(' '));
-}
-
-module.exports = exports['default'];
-},{}],3:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
-exports.leaf = leaf;
-exports.parent = parent;
-exports.root = root;
-exports.subpaths = subpaths;
-
-function leaf(path) {
-  var parts = path.split('/');
-  return parts[parts.length - 1];
-}
-
-function parent(path) {
-  var parts = path.split('/');
-  if (parts.length <= 1) {
-    return null;
-  }parts.pop();
-  return parts.join('/');
-}
-
-function root(path) {
-  return path.split('/')[0];
-}
-
-function subpaths(path) {
-  var parts = path.split('/');
-  return parts.reduce(function (result, part) {
-    var next = undefined;
-    if (result.length) {
-      var prev = result[result.length - 1];
-      next = '' + prev + '/' + part;
-    } else {
-      next = part;
-    }
-
-    result.push(next);
-    return result;
-  }, []);
-}
-},{}],4:[function(require,module,exports){
+},{"./idb":2}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -160,7 +100,50 @@ function transactionComplete(trans) {
     trans.oncomplete = resolve;
   });
 }
-},{}],5:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+exports.leaf = leaf;
+exports.parent = parent;
+exports.root = root;
+exports.subpaths = subpaths;
+
+function leaf(path) {
+  var parts = path.split('/');
+  return parts[parts.length - 1];
+}
+
+function parent(path) {
+  var parts = path.split('/');
+  if (parts.length <= 1) {
+    return null;
+  }parts.pop();
+  return parts.join('/');
+}
+
+function root(path) {
+  return path.split('/')[0];
+}
+
+function subpaths(path) {
+  var parts = path.split('/');
+  return parts.reduce(function (result, part) {
+    var next = undefined;
+    if (result.length) {
+      var prev = result[result.length - 1];
+      next = '' + prev + '/' + part;
+    } else {
+      next = part;
+    }
+
+    result.push(next);
+    return result;
+  }, []);
+}
+},{}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -188,7 +171,7 @@ function stringify(value) {
 
   return value.toString();
 }
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
@@ -284,7 +267,7 @@ var Query = (function (_EventEmitter2) {
 
 exports['default'] = Query;
 module.exports = exports['default'];
-},{"eventemitter2":10}],7:[function(require,module,exports){
+},{"eventemitter2":9}],6:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -324,7 +307,7 @@ function close() {
   db.close();
 }
 
-var _domPromise = require('./polyfill');
+var _domPromise = require('./idb');
 
 Object.defineProperty(exports, 'domPromise', {
   enumerable: true,
@@ -333,7 +316,7 @@ Object.defineProperty(exports, 'domPromise', {
   }
 });
 exports.Vertex = _Vertex2['default'];
-},{"./db":1,"./polyfill":4,"./vertex":8}],8:[function(require,module,exports){
+},{"./db":1,"./idb":2,"./vertex":7}],7:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -352,15 +335,11 @@ Object.defineProperty(exports, '__esModule', {
 
 var _db = require('./db');
 
-var _debug = require('./debug');
-
-var _debug2 = _interopRequireWildcard(_debug);
+var _domPromise$indexGetAll$transactionComplete = require('./idb');
 
 var _import = require('./path');
 
 var path = _interopRequireWildcard(_import);
-
-var _domPromise$indexGetAll$transactionComplete = require('./polyfill');
 
 var _import2 = require('./primitive');
 
@@ -425,7 +404,7 @@ var Vertex = (function (_Query) {
   }, {
     key: 'set',
     value: function set(value) {
-      var childKey, index, child, newValue;
+      var childKey, index, child, key, newValue;
       return regeneratorRuntime.async(function set$(context$2$0) {
         while (1) switch (context$2$0.prev = context$2$0.next) {
           case 0:
@@ -440,12 +419,12 @@ var Vertex = (function (_Query) {
 
           case 4:
             this.emit('child_added', new Vertex(childKey));
-            context$2$0.next = 19;
+            context$2$0.next = 32;
             break;
 
           case 7:
             if (!Array.isArray(value)) {
-              context$2$0.next = 19;
+              context$2$0.next = 21;
               break;
             }
 
@@ -474,15 +453,84 @@ var Vertex = (function (_Query) {
             break;
 
           case 19:
-            context$2$0.next = 21;
-            return getValue(this._key);
+            context$2$0.next = 32;
+            break;
 
           case 21:
+            context$2$0.t0 = regeneratorRuntime.keys(value);
+
+          case 22:
+            if ((context$2$0.t1 = context$2$0.t0()).done) {
+              context$2$0.next = 32;
+              break;
+            }
+
+            key = context$2$0.t1.value;
+            context$2$0.next = 26;
+            return this.child(key);
+
+          case 26:
+            child = context$2$0.sent;
+            context$2$0.next = 29;
+            return child.set(value[key]);
+
+          case 29:
+            this.emit('child_added', key);
+            context$2$0.next = 22;
+            break;
+
+          case 32:
+            context$2$0.next = 34;
+            return getValue(this._key);
+
+          case 34:
             newValue = context$2$0.sent;
 
             this.emit('value', newValue);
 
-          case 23:
+          case 36:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: 'update',
+    value: function update(value) {
+      return regeneratorRuntime.async(function update$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            throw new Error('Not yet implemented');
+
+          case 1:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: 'remove',
+    value: function remove() {
+      return regeneratorRuntime.async(function remove$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            throw new Error('Not yet implemented');
+
+          case 1:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: 'push',
+    value: function push() {
+      return regeneratorRuntime.async(function push$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            throw new Error('Not yet implemented');
+
+          case 1:
           case 'end':
             return context$2$0.stop();
         }
@@ -612,64 +660,113 @@ function createVertex(key, value) {
   }, null, this);
 }
 
+/**
+ * Example tree:
+ *
+ * test
+ *   \___ posts
+ *          \____ 0
+ *                \____ title
+ *                        \_____ Effective indexedDB abstractions
+ *                \____ author
+ *                        \_____ gaye
+ *                \____ comments
+ *                         \____ 0
+ *                               \____ How do you know when it's working?
+ *
+ */
 function getValue(key) {
-  var children, vertex, value, i, child, result;
+  var result, children;
   return regeneratorRuntime.async(function getValue$(context$1$0) {
     while (1) switch (context$1$0.prev = context$1$0.next) {
       case 0:
-        context$1$0.next = 2;
+        result = {};
+        context$1$0.next = 3;
         return getChildren(key);
 
-      case 2:
+      case 3:
         children = context$1$0.sent;
-        context$1$0.t0 = children.length;
-        context$1$0.next = context$1$0.t0 === 0 ? 6 : context$1$0.t0 === 1 ? 10 : 13;
-        break;
+        context$1$0.next = 6;
+        return getChildrenValue(children);
 
       case 6:
-        context$1$0.next = 8;
-        return findVertex(key);
+        result[path.leaf(key)] = context$1$0.sent;
+        return context$1$0.abrupt('return', result);
 
       case 8:
-        vertex = context$1$0.sent;
-        return context$1$0.abrupt('return', vertex ? vertex.value : null);
+      case 'end':
+        return context$1$0.stop();
+    }
+  }, null, this);
+}
 
-      case 10:
-        context$1$0.next = 12;
-        return getValue(children[0].key);
+function getChildrenValue(children) {
+  var child, grandchildren, vertex, value, i, _child, _grandchildren;
 
-      case 12:
-        return context$1$0.abrupt('return', context$1$0.sent);
+  return regeneratorRuntime.async(function getChildrenValue$(context$1$0) {
+    while (1) switch (context$1$0.prev = context$1$0.next) {
+      case 0:
+        context$1$0.t2 = children.length;
+        context$1$0.next = context$1$0.t2 === 0 ? 3 : context$1$0.t2 === 1 ? 4 : 14;
+        break;
 
-      case 13:
-        value = {};
-        i = 0;
+      case 3:
+        return context$1$0.abrupt('return', null);
 
-      case 15:
-        if (!(i < children.length)) {
-          context$1$0.next = 23;
+      case 4:
+        child = children[0];
+        context$1$0.next = 7;
+        return getChildren(child.key);
+
+      case 7:
+        grandchildren = context$1$0.sent;
+
+        if (grandchildren.length) {
+          context$1$0.next = 13;
           break;
         }
 
-        child = children[i];
-        context$1$0.next = 19;
-        return getValue(child.key);
+        context$1$0.next = 11;
+        return findVertex(child.key);
 
-      case 19:
-        value[path.leaf(child.key)] = context$1$0.sent;
+      case 11:
+        vertex = context$1$0.sent;
+        return context$1$0.abrupt('return', vertex.value);
+
+      case 13:
+        return context$1$0.abrupt('return', getValue(child.key));
+
+      case 14:
+        value = {};
+        i = 0;
+
+      case 16:
+        if (!(i < children.length)) {
+          context$1$0.next = 27;
+          break;
+        }
+
+        _child = children[i];
+        context$1$0.next = 20;
+        return getChildren(_child.key);
 
       case 20:
-        i++;
-        context$1$0.next = 15;
-        break;
+        _grandchildren = context$1$0.sent;
+        context$1$0.next = 23;
+        return getChildrenValue(_grandchildren);
 
       case 23:
-        result = {};
+        value[path.leaf(_child.key)] = context$1$0.sent;
 
-        result[path.leaf(key)] = value;
-        return context$1$0.abrupt('return', result);
+      case 24:
+        i++;
+        context$1$0.next = 16;
+        break;
 
-      case 26:
+      case 27:
+        return context$1$0.abrupt('return', value);
+
+      case 28:
       case 'end':
         return context$1$0.stop();
     }
@@ -701,91 +798,26 @@ function getChildren(key) {
     }
   }, null, this);
 }
-
 module.exports = exports['default'];
+
+// Object
 
 // Report new value.
 
-/*
-switch (event) {
-  case 'value':
-    let value = await getValue(this._key);
-    listener(value);
-    break;
-}
-*/
+// TODO(gaye)
+
+// TODO(gaye)
+
+// TODO(gaye)
+
+// TODO(gaye)
 
 // vertex needs to be created
-/*
-  async set(value) {
-    if (value == null || isPrimitive(value)) {
-      debug('Set primitive value', value);
-      await this._setValue(value);
-    } else if (Array.isArray(value)) {
-      debug('Set array', value);
-    } else {
-      debug('Set object', value);
-      for (let key in value) {
-        let child = await this.child(key);
-        await child.set(value[key]);
-      }
-    }
-
-    this.emit('value', this._getValue());
-  }
-
-  async update(value) {
-    // TODO(gaye)
-    throw new Error('Not yet implemented');
-  }
-
-  async remove() {
-    // TODO(gaye)
-    throw new Error('Not yet implemented');
-  }
-
-  async push() {
-    // TODO(gaye)
-    throw new Error('Not yet implemented');
-  }
-
-  async _onNewListener(event, listener) {
-    switch (event) {
-      case 'value':
-        let value = await this._getValue();
-        this.emit('value', value);
-        break;
-      case 'child_added':
-        // TODO(gaye)
-        break;
-    }
-  }
-
-  async _findChildren() {
-    debug('findChildren', this._key);
-  }
-
-  async _getValue() {
-  }
-
-  async _setValue(value) {
-    let vertex = await this._findVertex(this._key);
-    vertex.value = value;
-    console.log(JSON.stringify(vertex));
-    let trans = db.transaction('vertex', 'readwrite');
-    let store = trans.objectStore('vertex');
-    return domPromise(store.put(vertex));
-  }
-}
-
-function isPrimitive(value) {
-}
-*/
-},{"./db":1,"./debug":2,"./path":3,"./polyfill":4,"./primitive":5,"./query":6}],9:[function(require,module,exports){
+},{"./db":1,"./idb":2,"./path":3,"./primitive":4,"./query":5}],8:[function(require,module,exports){
 require('regenerator/runtime');
 module.exports = require('./build/treedb');
 
-},{"./build/treedb":7,"regenerator/runtime":11}],10:[function(require,module,exports){
+},{"./build/treedb":6,"regenerator/runtime":10}],9:[function(require,module,exports){
 /*!
  * EventEmitter2
  * https://github.com/hij1nx/EventEmitter2
@@ -1360,7 +1392,7 @@ module.exports = require('./build/treedb');
   }
 }();
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function (global){
 /**
  * Copyright (c) 2014, Facebook, Inc.
@@ -1928,5 +1960,5 @@ module.exports = require('./build/treedb');
 );
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[9])(9)
+},{}]},{},[8])(8)
 });

@@ -47,7 +47,16 @@ suite('treedb', function() {
   });
 
   suite('#set', function() {
-    test('primitive value', function(done) {
+    test('primitive should emit \'value\'', function(done) {
+      root.on('value', function(newValue) {
+        expect(newValue).to.deep.equal({ 'test': 5 });
+        done();
+      });
+
+      root.set(5);
+    });
+
+    test('primitive should emit \'child_added\'', function(done) {
       root.on('child_added', function(child) {
         expect(child.key()).to.equal('test/5');
         done();
@@ -56,23 +65,64 @@ suite('treedb', function() {
       root.set(5);
     });
 
-    test('array of primitives', function(done) {
+    test('array of primitives should emit \'value\'', function(done) {
       root.on('value', function(newValue) {
         expect(newValue).to.deep.equal({
-          'test': {
-            '0': 'a',
-            '1': 'b',
-            '2': 'c',
-            '3': 1,
-            '4': 2,
-            '5': 3
-          }
+          'test': { '0': 'a', '1': 'b', '2': 'c', '3': 1, '4': 2, '5': 3 }
         });
 
         done();
       });
 
       root.set(['a', 'b', 'c', 1, 2, 3]);
+    });
+
+    test('rich object should emit \'value\'', function(done) {
+      root.on('value', function(newValue) {
+        expect(newValue).to.deep.equal({
+          'test': {
+            'posts': {
+              '0': {
+                'title': 'Effective indexedDB abstractions',
+                'author': 'gaye',
+                'comments': {
+                  '0': 'How do you know when it\'s working?'
+                }
+              },
+              '1': {
+                'title': 'Ineffective recursion',
+                'author': 'gaye',
+                'comments': {
+                  '0': 'err',
+                  '1': 'looks kinda weird tbh'
+                }
+              }
+            }
+          }
+        });
+
+        done();
+      });
+
+      root.set({
+        posts: [
+          {
+            title: 'Effective indexedDB abstractions',
+            author: 'gaye',
+            comments: [
+              'How do you know when it\'s working?'
+            ]
+          },
+          {
+            title: 'Ineffective recursion',
+            author: 'gaye',
+            comments: [
+              'err',
+              'looks kinda weird tbh'
+            ]
+          }
+        ]
+      });
     });
   });
 });

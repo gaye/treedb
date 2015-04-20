@@ -1,4 +1,4 @@
-import { domPromise } from './polyfill';
+import { domPromise } from './idb';
 
 export let db;
 

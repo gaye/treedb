@@ -10,5 +10,5 @@ export function close() {
   db.close();
 }
 
-export { domPromise } from './polyfill';
+export { domPromise } from './idb';
 export { Vertex }

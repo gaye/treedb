@@ -1,6 +1,6 @@
 import { db } from './db';
+import { domPromise, indexGetAll, transactionComplete } from './idb';
 import * as path from './path';
-import { domPromise, indexGetAll, transactionComplete } from './polyfill';
 import * as primitive from './primitive';
 import Query from './query';
 
@@ -121,24 +121,51 @@ async function createVertex(key, value) {
   return record;
 }
 
+/**
+ * Example tree:
+ *
+ * test
+ *   \___ posts
+ *          \____ 0
+ *                \____ title
+ *                        \_____ Effective indexedDB abstractions
+ *                \____ author
+ *                        \_____ gaye
+ *                \____ comments
+ *                         \____ 0
+ *                               \____ How do you know when it's working?
+ *
+ */
 async function getValue(key) {
+  let result = {};
   let children = await getChildren(key);
+  result[path.leaf(key)] = await getChildrenValue(children);
+  return result;
+}
+
+async function getChildrenValue(children) {
   switch (children.length) {
     case 0:
-      let vertex = await findVertex(key);
-      return vertex ? vertex.value : null;
+      return null;
     case 1:
-      return await getValue(children[0].key);
-    default:
-      let value = {};
-      for (var i = 0; i < children.length; i++) {
-        let child = children[i];
-        value[path.leaf(child.key)] = await getValue(child.key);
+      let child = children[0];
+      let grandchildren = await getChildren(child.key);
+
+      if (!grandchildren.length) {
+        let vertex = await findVertex(child.key);
+        return vertex.value;
       }
 
-      let result = {};
-      result[path.leaf(key)] = value;
-      return result;
+      return getValue(child.key);
+    default:
+      let value = {};
+      for (let i = 0; i < children.length; i++) {
+        let child = children[i];
+        let grandchildren = await getChildren(child.key);
+        value[path.leaf(child.key)] = await getChildrenValue(grandchildren);
+      }
+
+      return value;
   }
 }
 
