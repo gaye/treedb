@@ -1,3 +1,8 @@
+export function isChild(maybeChild, maybeParent) {
+  return maybeChild.indexOf(maybeParent) === 0 &&
+         maybeChild.split('/').length === (maybeParent.split('/').length + 1);
+}
+
 export function leaf(path) {
   let parts = path.split('/');
   return parts[parts.length - 1];

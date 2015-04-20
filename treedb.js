@@ -106,10 +106,15 @@ function transactionComplete(trans) {
 Object.defineProperty(exports, '__esModule', {
   value: true
 });
+exports.isChild = isChild;
 exports.leaf = leaf;
 exports.parent = parent;
 exports.root = root;
 exports.subpaths = subpaths;
+
+function isChild(maybeChild, maybeParent) {
+  return maybeChild.indexOf(maybeParent) === 0 && maybeChild.split('/').length === maybeParent.split('/').length + 1;
+}
 
 function leaf(path) {
   var parts = path.split('/');
@@ -267,7 +272,7 @@ var Query = (function (_EventEmitter2) {
 
 exports['default'] = Query;
 module.exports = exports['default'];
-},{"eventemitter2":9}],6:[function(require,module,exports){
+},{"eventemitter2":10}],6:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -275,63 +280,33 @@ var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? ob
 Object.defineProperty(exports, '__esModule', {
   value: true
 });
-exports.open = open;
-exports.close = close;
 
-var _import = require('./db');
+/**
+ * @param {String} key path to create vertex.
+ * @return {Array.<Object>} vertices created in this method.
+ */
+exports.findOrCreateVertex = findOrCreateVertex;
+exports.findVertex = findVertex;
+exports.createVertex = createVertex;
 
-var db = _interopRequireWildcard(_import);
-
-var _Vertex = require('./vertex');
-
-var _Vertex2 = _interopRequireWildcard(_Vertex);
-
-function open(name) {
-  return regeneratorRuntime.async(function open$(context$1$0) {
-    while (1) switch (context$1$0.prev = context$1$0.next) {
-      case 0:
-        context$1$0.next = 2;
-        return db.open(name);
-
-      case 2:
-        return context$1$0.abrupt('return', new _Vertex2['default'](name));
-
-      case 3:
-      case 'end':
-        return context$1$0.stop();
-    }
-  }, null, this);
-}
-
-function close() {
-  db.close();
-}
-
-var _domPromise = require('./idb');
-
-Object.defineProperty(exports, 'domPromise', {
-  enumerable: true,
-  get: function get() {
-    return _domPromise.domPromise;
-  }
-});
-exports.Vertex = _Vertex2['default'];
-},{"./db":1,"./idb":2,"./vertex":7}],7:[function(require,module,exports){
-'use strict';
-
-var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _inherits = function (subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
-
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
+/**
+ * Example tree:
+ *
+ * test
+ *   \___ posts
+ *          \____ 0
+ *                \____ title
+ *                        \_____ Effective indexedDB abstractions
+ *                \____ author
+ *                        \_____ gaye
+ *                \____ comments
+ *                         \____ 0
+ *                               \____ How do you know when it's working?
+ *
+ */
+exports.getValue = getValue;
+exports.getChildrenValue = getChildrenValue;
+exports.getChildren = getChildren;
 
 var _db = require('./db');
 
@@ -341,269 +316,55 @@ var _import = require('./path');
 
 var path = _interopRequireWildcard(_import);
 
-var _import2 = require('./primitive');
-
-var primitive = _interopRequireWildcard(_import2);
-
-var _Query2 = require('./query');
-
-var _Query3 = _interopRequireWildcard(_Query2);
-
-var Vertex = (function (_Query) {
-  function Vertex(key) {
-    _classCallCheck(this, Vertex);
-
-    _get(Object.getPrototypeOf(Vertex.prototype), 'constructor', this).call(this);
-
-    this._key = key;
-    this._onNewListener = this._onNewListener.bind(this);
-    this.on('newListener', this._onNewListener);
-  }
-
-  _inherits(Vertex, _Query);
-
-  _createClass(Vertex, [{
-    key: 'child',
-    value: function child(relpath) {
-      var childpath;
-      return regeneratorRuntime.async(function child$(context$2$0) {
-        while (1) switch (context$2$0.prev = context$2$0.next) {
-          case 0:
-            childpath = '' + this._key + '/' + relpath;
-            context$2$0.next = 3;
-            return findOrCreateVertex(childpath);
-
-          case 3:
-            return context$2$0.abrupt('return', new Vertex(childpath));
-
-          case 4:
-          case 'end':
-            return context$2$0.stop();
-        }
-      }, null, this);
-    }
-  }, {
-    key: 'parent',
-    value: function parent() {
-      // We already know that the parent vertex exists.
-      var parentpath = path.parent(this._key);
-      return new Vertex(parentpath);
-    }
-  }, {
-    key: 'root',
-    value: function root() {
-      // We already know that the root exists.
-      var rootpath = path.root(this._key);
-      return new Vertex(rootpath, _db.db);
-    }
-  }, {
-    key: 'key',
-    value: function key() {
-      return this._key;
-    }
-  }, {
-    key: 'set',
-    value: function set(value) {
-      var childKey, index, child, key, newValue;
-      return regeneratorRuntime.async(function set$(context$2$0) {
-        while (1) switch (context$2$0.prev = context$2$0.next) {
-          case 0:
-            if (!primitive.isPrimitive(value)) {
-              context$2$0.next = 7;
-              break;
-            }
-
-            childKey = '' + this._key + '/' + primitive.stringify(value);
-            context$2$0.next = 4;
-            return createVertex(childKey, value);
-
-          case 4:
-            this.emit('child_added', new Vertex(childKey));
-            context$2$0.next = 32;
-            break;
-
-          case 7:
-            if (!Array.isArray(value)) {
-              context$2$0.next = 21;
-              break;
-            }
-
-            index = 0;
-
-          case 9:
-            if (!(index < value.length)) {
-              context$2$0.next = 19;
-              break;
-            }
-
-            context$2$0.next = 12;
-            return this.child(index.toString());
-
-          case 12:
-            child = context$2$0.sent;
-            context$2$0.next = 15;
-            return child.set(value[index]);
-
-          case 15:
-            this.emit('child_added', child);
-
-          case 16:
-            index++;
-            context$2$0.next = 9;
-            break;
-
-          case 19:
-            context$2$0.next = 32;
-            break;
-
-          case 21:
-            context$2$0.t0 = regeneratorRuntime.keys(value);
-
-          case 22:
-            if ((context$2$0.t1 = context$2$0.t0()).done) {
-              context$2$0.next = 32;
-              break;
-            }
-
-            key = context$2$0.t1.value;
-            context$2$0.next = 26;
-            return this.child(key);
-
-          case 26:
-            child = context$2$0.sent;
-            context$2$0.next = 29;
-            return child.set(value[key]);
-
-          case 29:
-            this.emit('child_added', key);
-            context$2$0.next = 22;
-            break;
-
-          case 32:
-            context$2$0.next = 34;
-            return getValue(this._key);
-
-          case 34:
-            newValue = context$2$0.sent;
-
-            this.emit('value', newValue);
-
-          case 36:
-          case 'end':
-            return context$2$0.stop();
-        }
-      }, null, this);
-    }
-  }, {
-    key: 'update',
-    value: function update(value) {
-      return regeneratorRuntime.async(function update$(context$2$0) {
-        while (1) switch (context$2$0.prev = context$2$0.next) {
-          case 0:
-            throw new Error('Not yet implemented');
-
-          case 1:
-          case 'end':
-            return context$2$0.stop();
-        }
-      }, null, this);
-    }
-  }, {
-    key: 'remove',
-    value: function remove() {
-      return regeneratorRuntime.async(function remove$(context$2$0) {
-        while (1) switch (context$2$0.prev = context$2$0.next) {
-          case 0:
-            throw new Error('Not yet implemented');
-
-          case 1:
-          case 'end':
-            return context$2$0.stop();
-        }
-      }, null, this);
-    }
-  }, {
-    key: 'push',
-    value: function push() {
-      return regeneratorRuntime.async(function push$(context$2$0) {
-        while (1) switch (context$2$0.prev = context$2$0.next) {
-          case 0:
-            throw new Error('Not yet implemented');
-
-          case 1:
-          case 'end':
-            return context$2$0.stop();
-        }
-      }, null, this);
-    }
-  }, {
-    key: '_onNewListener',
-
-    /**
-     * We need to tell the new listener our data.
-     */
-    value: function _onNewListener(event, listener) {
-      return regeneratorRuntime.async(function _onNewListener$(context$2$0) {
-        while (1) switch (context$2$0.prev = context$2$0.next) {
-          case 0:
-          case 'end':
-            return context$2$0.stop();
-        }
-      }, null, this);
-    }
-  }]);
-
-  return Vertex;
-})(_Query3['default']);
-
-exports['default'] = Vertex;
-
 function findOrCreateVertex(key) {
-  var subpaths, vertex, parentKey, i, subpath;
+  var subpaths, vertices, vertex, parentKey, i, subpath;
   return regeneratorRuntime.async(function findOrCreateVertex$(context$1$0) {
     while (1) switch (context$1$0.prev = context$1$0.next) {
       case 0:
         subpaths = path.subpaths(key);
+        vertices = [];
         vertex = undefined, parentKey = undefined;
         i = 0;
 
-      case 3:
+      case 4:
         if (!(i < subpaths.length)) {
-          context$1$0.next = 16;
+          context$1$0.next = 18;
           break;
         }
 
         subpath = subpaths[i];
-        context$1$0.next = 7;
+        context$1$0.next = 8;
         return findVertex(subpath);
 
-      case 7:
+      case 8:
         vertex = context$1$0.sent;
 
         if (!(!vertex || !vertex.key)) {
-          context$1$0.next = 12;
+          context$1$0.next = 14;
           break;
         }
 
-        context$1$0.next = 11;
+        context$1$0.next = 12;
         return createVertex(subpath);
 
-      case 11:
+      case 12:
         vertex = context$1$0.sent;
 
-      case 12:
+        vertices.push(vertex);
+
+      case 14:
 
         parentKey = vertex.key;
 
-      case 13:
+      case 15:
         i++;
-        context$1$0.next = 3;
+        context$1$0.next = 4;
         break;
 
-      case 16:
-        return context$1$0.abrupt('return', vertex);
+      case 18:
+        return context$1$0.abrupt('return', vertices);
 
-      case 17:
+      case 19:
       case 'end':
         return context$1$0.stop();
     }
@@ -660,21 +421,6 @@ function createVertex(key, value) {
   }, null, this);
 }
 
-/**
- * Example tree:
- *
- * test
- *   \___ posts
- *          \____ 0
- *                \____ title
- *                        \_____ Effective indexedDB abstractions
- *                \____ author
- *                        \_____ gaye
- *                \____ comments
- *                         \____ 0
- *                               \____ How do you know when it's working?
- *
- */
 function getValue(key) {
   var result, children;
   return regeneratorRuntime.async(function getValue$(context$1$0) {
@@ -706,8 +452,8 @@ function getChildrenValue(children) {
   return regeneratorRuntime.async(function getChildrenValue$(context$1$0) {
     while (1) switch (context$1$0.prev = context$1$0.next) {
       case 0:
-        context$1$0.t2 = children.length;
-        context$1$0.next = context$1$0.t2 === 0 ? 3 : context$1$0.t2 === 1 ? 4 : 14;
+        context$1$0.t0 = children.length;
+        context$1$0.next = context$1$0.t0 === 0 ? 3 : context$1$0.t0 === 1 ? 4 : 14;
         break;
 
       case 3:
@@ -731,7 +477,7 @@ function getChildrenValue(children) {
 
       case 11:
         vertex = context$1$0.sent;
-        return context$1$0.abrupt('return', vertex.value);
+        return context$1$0.abrupt('return', vertex.value || path.leaf(child.key));
 
       case 13:
         return context$1$0.abrupt('return', getValue(child.key));
@@ -798,7 +544,348 @@ function getChildren(key) {
     }
   }, null, this);
 }
+
+// vertex needs to be created
+},{"./db":1,"./idb":2,"./path":3}],7:[function(require,module,exports){
+'use strict';
+
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+exports.open = open;
+exports.close = close;
+
+var _import = require('./db');
+
+var db = _interopRequireWildcard(_import);
+
+var _Vertex = require('./vertex');
+
+var _Vertex2 = _interopRequireWildcard(_Vertex);
+
+function open(name) {
+  return regeneratorRuntime.async(function open$(context$1$0) {
+    while (1) switch (context$1$0.prev = context$1$0.next) {
+      case 0:
+        context$1$0.next = 2;
+        return db.open(name);
+
+      case 2:
+        return context$1$0.abrupt('return', new _Vertex2['default'](name));
+
+      case 3:
+      case 'end':
+        return context$1$0.stop();
+    }
+  }, null, this);
+}
+
+function close() {
+  db.close();
+}
+
+var _domPromise = require('./idb');
+
+Object.defineProperty(exports, 'domPromise', {
+  enumerable: true,
+  get: function get() {
+    return _domPromise.domPromise;
+  }
+});
+exports.Vertex = _Vertex2['default'];
+},{"./db":1,"./idb":2,"./vertex":8}],8:[function(require,module,exports){
+'use strict';
+
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+var _import = require('./path');
+
+var path = _interopRequireWildcard(_import);
+
+var _import2 = require('./primitive');
+
+var primitive = _interopRequireWildcard(_import2);
+
+var _import3 = require('./tree');
+
+var tree = _interopRequireWildcard(_import3);
+
+var _Query2 = require('./query');
+
+var _Query3 = _interopRequireWildcard(_Query2);
+
+/**
+ * Events:
+ *
+ *   'value'
+ *   'child_added'
+ *   'child_removed'
+ *   'child_changed'
+ */
+
+var Vertex = (function (_Query) {
+  function Vertex(key) {
+    _classCallCheck(this, Vertex);
+
+    _get(Object.getPrototypeOf(Vertex.prototype), 'constructor', this).call(this);
+
+    this._key = key;
+    this._onNewListener = this._onNewListener.bind(this);
+    this.on('newListener', this._onNewListener);
+  }
+
+  _inherits(Vertex, _Query);
+
+  _createClass(Vertex, [{
+    key: 'child',
+    value: (function (_child) {
+      function child(_x) {
+        return _child.apply(this, arguments);
+      }
+
+      child.toString = function () {
+        return _child.toString();
+      };
+
+      return child;
+    })(function callee$1$0(relpath) {
+      var childpath, vertices, child, childKey, value;
+      return regeneratorRuntime.async(function callee$1$0$(context$2$0) {
+        var _this = this;
+
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            childpath = '' + this._key + '/' + relpath;
+            context$2$0.next = 3;
+            return tree.findOrCreateVertex(childpath);
+
+          case 3:
+            vertices = context$2$0.sent;
+            child = vertices.find(function (vertex) {
+              return path.isChild(vertex.key, _this._key);
+            });
+
+            if (!child) {
+              context$2$0.next = 9;
+              break;
+            }
+
+            // A direct child was created
+            this.emit('child_added', new Vertex(child.key));
+            context$2$0.next = 14;
+            break;
+
+          case 9:
+            childKey = '' + this._key + '/' + path.root(relpath);
+            context$2$0.next = 12;
+            return tree.getValue(childKey);
+
+          case 12:
+            value = context$2$0.sent;
+
+            this.emit('child_changed', value);
+
+          case 14:
+            return context$2$0.abrupt('return', new Vertex(childpath));
+
+          case 15:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    })
+  }, {
+    key: 'parent',
+    value: function parent() {
+      // We already know that the parent vertex exists.
+      var parentpath = path.parent(this._key);
+      return new Vertex(parentpath);
+    }
+  }, {
+    key: 'root',
+    value: function root() {
+      // We already know that the root exists.
+      var rootpath = path.root(this._key);
+      return new Vertex(rootpath);
+    }
+  }, {
+    key: 'key',
+    value: function key() {
+      return this._key;
+    }
+  }, {
+    key: 'set',
+    value: function set(value) {
+      var childKey, index, child, key, newValue;
+      return regeneratorRuntime.async(function set$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            if (!primitive.isPrimitive(value)) {
+              context$2$0.next = 7;
+              break;
+            }
+
+            childKey = '' + this._key + '/' + primitive.stringify(value);
+            context$2$0.next = 4;
+            return tree.createVertex(childKey, value);
+
+          case 4:
+            this.emit('child_added', new Vertex(childKey));
+            context$2$0.next = 32;
+            break;
+
+          case 7:
+            if (!Array.isArray(value)) {
+              context$2$0.next = 21;
+              break;
+            }
+
+            index = 0;
+
+          case 9:
+            if (!(index < value.length)) {
+              context$2$0.next = 19;
+              break;
+            }
+
+            context$2$0.next = 12;
+            return this.child(index.toString());
+
+          case 12:
+            child = context$2$0.sent;
+            context$2$0.next = 15;
+            return child.set(value[index]);
+
+          case 15:
+            this.emit('child_added', child);
+
+          case 16:
+            index++;
+            context$2$0.next = 9;
+            break;
+
+          case 19:
+            context$2$0.next = 32;
+            break;
+
+          case 21:
+            context$2$0.t1 = regeneratorRuntime.keys(value);
+
+          case 22:
+            if ((context$2$0.t2 = context$2$0.t1()).done) {
+              context$2$0.next = 32;
+              break;
+            }
+
+            key = context$2$0.t2.value;
+            context$2$0.next = 26;
+            return this.child(key);
+
+          case 26:
+            child = context$2$0.sent;
+            context$2$0.next = 29;
+            return child.set(value[key]);
+
+          case 29:
+            this.emit('child_added', key);
+            context$2$0.next = 22;
+            break;
+
+          case 32:
+            context$2$0.next = 34;
+            return tree.getValue(this._key);
+
+          case 34:
+            newValue = context$2$0.sent;
+
+            this.emit('value', newValue);
+
+          case 36:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: 'update',
+    value: function update(value) {
+      return regeneratorRuntime.async(function update$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            throw new Error('Not yet implemented');
+
+          case 1:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: 'remove',
+    value: function remove() {
+      return regeneratorRuntime.async(function remove$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            this.set(null);
+
+          case 1:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: 'push',
+    value: function push() {
+      return regeneratorRuntime.async(function push$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+            throw new Error('Not yet implemented');
+
+          case 1:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }, {
+    key: '_onNewListener',
+
+    /**
+     * We need to tell the new listener our data.
+     */
+    value: function _onNewListener(event, listener) {
+      return regeneratorRuntime.async(function _onNewListener$(context$2$0) {
+        while (1) switch (context$2$0.prev = context$2$0.next) {
+          case 0:
+          case 'end':
+            return context$2$0.stop();
+        }
+      }, null, this);
+    }
+  }]);
+
+  return Vertex;
+})(_Query3['default']);
+
+exports['default'] = Vertex;
 module.exports = exports['default'];
+
+// A descendant was created but not a direct child.
 
 // Object
 
@@ -809,15 +896,11 @@ module.exports = exports['default'];
 // TODO(gaye)
 
 // TODO(gaye)
-
-// TODO(gaye)
-
-// vertex needs to be created
-},{"./db":1,"./idb":2,"./path":3,"./primitive":4,"./query":5}],8:[function(require,module,exports){
+},{"./path":3,"./primitive":4,"./query":5,"./tree":6}],9:[function(require,module,exports){
 require('regenerator/runtime');
 module.exports = require('./build/treedb');
 
-},{"./build/treedb":6,"regenerator/runtime":10}],9:[function(require,module,exports){
+},{"./build/treedb":7,"regenerator/runtime":11}],10:[function(require,module,exports){
 /*!
  * EventEmitter2
  * https://github.com/hij1nx/EventEmitter2
@@ -1392,7 +1475,7 @@ module.exports = require('./build/treedb');
   }
 }();
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (global){
 /**
  * Copyright (c) 2014, Facebook, Inc.
@@ -1960,5 +2043,5 @@ module.exports = require('./build/treedb');
 );
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[8])(8)
+},{}]},{},[9])(9)
 });

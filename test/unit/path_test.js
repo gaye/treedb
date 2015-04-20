@@ -3,6 +3,11 @@ import { assert } from 'chai';
 import * as path from '../../src/path';
 
 suite('path', function() {
+  test('#isChild', function() {
+    assert.ok(path.isChild('stairway/to/heaven', 'stairway/to'));
+    assert.notOk(path.isChild('stairway/to/heaven', 'stairway'));
+  });
+
   test('#leaf', function() {
     assert.equal(path.leaf('stairway/to/heaven'), 'heaven');
   });

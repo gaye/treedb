@@ -21,6 +21,33 @@ suite('treedb', function() {
     expect(root).to.be.instanceOf(treedb.Vertex);
   });
 
+  test('#child should emit \'child_added\'', function(done) {
+    root.on('child_added', function(child) {
+      expect(child.key()).to.equal('test/posts');
+      done();
+    });
+
+    root.child('posts/0/comments/0');
+  });
+
+  test('#child should emit \'child_changed\'', function(done) {
+    root.on('child_changed', function(child) {
+      expect(child).to.deep.equal({
+        'posts': {
+          '0': {
+            'comments': '0'
+          }
+        }
+      });
+
+      done();
+    });
+
+    root.child('posts').then(function() {
+      root.child('posts/0/comments/0');
+    });
+  });
+
   suite('with child', function() {
     var child;
 
