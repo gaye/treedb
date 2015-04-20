@@ -1,3 +1,6 @@
+/**
+ * @fileoverview indexedDB polyfills and utilities.
+ */
 export function domPromise(req) {
   return new Promise((resolve, reject) => {
     req.onerror = () => reject(req.errorCode);

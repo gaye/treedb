@@ -1,3 +1,6 @@
+/**
+ * @fileoverview abstractions for basic tree operations.
+ */
 import { db } from './db';
 import { domPromise, indexGetAll, transactionComplete } from './idb';
 import * as path from './path';

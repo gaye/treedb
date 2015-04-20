@@ -1,3 +1,6 @@
+/**
+ * @fileoverview utilities for doing treedb key path computations.
+ */
 export function isChild(maybeChild, maybeParent) {
   return maybeChild.indexOf(maybeParent) === 0 &&
          maybeChild.split('/').length === (maybeParent.split('/').length + 1);
